@@ -40,6 +40,7 @@ import os.path
 import re
 import sys
 import tarfile
+import json
 
 import numpy as np
 from six.moves import urllib
@@ -47,10 +48,34 @@ import tensorflow as tf
 
 FLAGS = None
 
+scriptpath = "converter.py"
+
+# Add the directory containing your module to the Python path (wants absolute paths)
+sys.path.append(os.path.abspath(scriptpath))
+
+# Do the import
+import converter
+
+from converter import MyEncoder
+
 # pylint: disable=line-too-long
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
 # pylint: enable=line-too-long
 
+#code to Convert Dictionary to json
+
+class MyEncoder(json.JSONEncoder):
+    def default(self,obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(MyEncoder, self).default(obj)
+
+        return json.dumps(data, cls=MyEncoder)    
 
 class NodeLookup(object):
   """Converts integer node ID's to human readable labels."""
@@ -159,12 +184,34 @@ def run_inference_on_image(image):
 
     # Creates node ID --> English string lookup.
     node_lookup = NodeLookup()
-
+    my_dict = {}
     top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
     for node_id in top_k:
       human_string = node_lookup.id_to_string(node_id)
       score = predictions[node_id]
-      print('%s (score = %.5f)' % (human_string, score))
+      #print('%s (score = %.5f)' % (human_string, score))
+      human_string = human_string.replace(',', '')
+      human_string = human_string.replace(' ', '_')
+      my_dict[human_string] = score
+      #b = my_dict.tolist()
+      #result = json.dumps(b)
+
+    #code to be added 
+    
+
+    #print(dictlist)  
+    result= json.dumps(my_dict, cls=MyEncoder)
+    #json_data = json.loads(result)
+    print(json.loads(result))
+    #result = MyEncoder.default(my_dict)
+
+
+    #print(result[0][0])
+    loaded_json = json.loads(result)
+    for x in loaded_json:
+      print("%s: %f" % (x, loaded_json[x]))
+
+    
 
 
 def maybe_download_and_extract():
