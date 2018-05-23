@@ -13,9 +13,7 @@ import tensorflow as tf
 
 def main():
 	#Code To be Added 
-	
-
-
+	#call function to which sends image and return json data of image
 
 
 
